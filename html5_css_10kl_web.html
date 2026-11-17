@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 & CSS3: Інтерактивний тренажер (10 клас)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        .draggable-item {
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+
+        .drop-zone {
+            transition: all 0.2s ease;
+            min-height: 54px;
+        }
+        .drop-zone.drag-over {
+            background-color: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            transform: scale(1.01);
+        }
+
+        .bug-line {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .bug-line:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        @keyframes pulse-success {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+        }
+        .success-glow {
+            animation: pulse-success 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    <i class="fa-solid fa-code"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-tight">Веб-дизайн: Модуль 2 (HTML5 + CSS)</h1>
+                    <p class="text-xs text-slate-400">Інтерактивний тренажер перед контрольною роботою • 10 клас</p>
+                </div>
+            </div>
+
+            <!-- Progress & Score -->
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-star text-amber-400"></i>
+                    <span class="text-sm font-medium text-slate-300">Бали:</span>
+                    <span id="total-score" class="font-bold text-amber-400 text-base">0</span>
+                    <span class="text-xs text-slate-500">/ 100</span>
+                </div>
+                <div class="hidden sm:flex items-center gap-2">
+                    <div class="w-32 h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                        <div id="progress-bar" class="h-full bg-gradient-to-r from-sky-400 to-emerald-400 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <span id="progress-text" class="text-xs font-medium text-slate-400">0/4</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-slate-900/50 border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 flex overflow-x-auto no-scrollbar">
+            <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn active px-5 py-3.5 text-sm font-medium border-b-2 border-sky-500 text-sky-400 flex items-center gap-2 whitespace-nowrap transition-colors">
+                <span class="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold">1</span>
+                Архітектор HTML5
+                <i id="check-1" class="fa-solid fa-circle-check text-emerald-400 hidden"></i>
+            </button>
+            <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors">
+                <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold">2</span>
+                Детектор багів (Синтаксис)
+                <i id="check-2" class="fa-solid fa-circle-check text-emerald-400 hidden"></i>
+            </button>
+            <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors">
+                <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold">3</span>
+                CSS-стиліст (Живий код)
+                <i id="check-3" class="fa-solid fa-circle-check text-emerald-400 hidden"></i>
+            </button>
+            <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn px-5 py-3.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors">
+                <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold">4</span>
+                Бліц-перевірка тегів
+                <i id="check-4" class="fa-solid fa-circle-check text-emerald-400 hidden"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
+
+        <!-- ================= LEVEL 1: DRAG & DROP SEMANTICS ================= -->
+        <section id="level-1" class="level-section">
+            <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <span class="px-2.5 py-1 text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-md">Завдання 1 • Семантика HTML5 (25 балів)</span>
+                    <h2 class="text-2xl font-bold text-white mt-2">Збери повний парний каркас вебсторінки</h2>
+                    <p class="text-slate-400 text-sm mt-1">Перетягни <strong>відкриваючі та закриваючі</strong> семантичні теги у відповідні слоти початку та кінця кожного блоку. (Клік по слоту — очистити).</p>
+                </div>
+                <button onclick="resetLevel1()" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Скинути
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Wireframe Drop Area -->
+                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800">
+                        <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <span class="text-xs text-slate-500 code-font ml-2">index.html — Структура &lt;body&gt; (12 слотів)</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Header block -->
+                        <div class="border border-slate-700/80 rounded-xl p-3 bg-slate-800/30 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs uppercase tracking-wider text-slate-300 font-semibold">1. Верхня частина (шапка) сайту</span>
+                                <div class="drop-zone slot-target min-w-[130px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="header" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Відкриваючий</div>
+                            </div>
+                            <p class="text-[11px] text-slate-500 pl-2 border-l-2 border-slate-700">Логотип, назва порталу, гасло</p>
+                            <div class="flex justify-end">
+                                <div class="drop-zone slot-target min-w-[130px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="/header" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Закриваючий</div>
+                            </div>
+                        </div>
+
+                        <!-- Nav block -->
+                        <div class="border border-slate-700/80 rounded-xl p-3 bg-slate-800/30 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs uppercase tracking-wider text-slate-300 font-semibold">2. Головне меню навігації</span>
+                                <div class="drop-zone slot-target min-w-[130px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="nav" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Відкриваючий</div>
+                            </div>
+                            <p class="text-[11px] text-slate-500 pl-2 border-l-2 border-slate-700">Посилання: Головна • Новини • Контакти</p>
+                            <div class="flex justify-end">
+                                <div class="drop-zone slot-target min-w-[130px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="/nav" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Закриваючий</div>
+                            </div>
+                        </div>
+
+                        <!-- Main + Aside wrapper -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <!-- Main block -->
+                            <div class="md:col-span-2 border border-sky-900/60 rounded-xl p-3 bg-slate-800/40 space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-xs uppercase tracking-wider text-sky-400 font-semibold">3. Основний контент</span>
+                                    <div class="drop-zone slot-target min-w-[125px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="main" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Відкриваючий</div>
+                                </div>
+
+                                <!-- Nested Article block -->
+                                <div class="border border-slate-600/80 rounded-lg p-2.5 bg-slate-900/70 space-y-1.5 my-1">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[11px] font-semibold text-slate-300">4. Самостійна стаття</span>
+                                        <div class="drop-zone slot-target min-w-[115px] h-7 rounded bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-[11px] text-slate-500 code-font cursor-pointer" data-expected="article" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Відкриваючий</div>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 pl-2 border-l border-slate-700">Заголовок та текст новини</p>
+                                    <div class="flex justify-end">
+                                        <div class="drop-zone slot-target min-w-[115px] h-7 rounded bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-[11px] text-slate-500 code-font cursor-pointer" data-expected="/article" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Закриваючий</div>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <div class="drop-zone slot-target min-w-[125px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="/main" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Закриваючий</div>
+                                </div>
+                            </div>
+
+                            <!-- Aside block -->
+                            <div class="border border-amber-900/50 rounded-xl p-3 bg-slate-800/40 flex flex-col justify-between gap-2">
+                                <div class="space-y-2">
+                                    <span class="text-xs uppercase tracking-wider text-amber-400 font-semibold block">5. Бічна панель</span>
+                                    <div class="drop-zone slot-target w-full h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="aside" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Відкриваючий</div>
+                                    <p class="text-[11px] text-slate-500 pl-2 border-l-2 border-slate-700">Фільтри, архів, банери</p>
+                                </div>
+                                <div class="drop-zone slot-target w-full h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="/aside" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Закриваючий</div>
+                            </div>
+                        </div>
+
+                        <!-- Footer block -->
+                        <div class="border border-slate-700/80 rounded-xl p-3 bg-slate-800/30 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs uppercase tracking-wider text-slate-300 font-semibold">6. Нижня частина («підвал»)</span>
+                                <div class="drop-zone slot-target min-w-[130px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="footer" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Відкриваючий</div>
+                            </div>
+                            <p class="text-[11px] text-slate-500 pl-2 border-l-2 border-slate-700">Копірайт © 2026, контакти автора</p>
+                            <div class="flex justify-end">
+                                <div class="drop-zone slot-target min-w-[130px] h-8 rounded-lg bg-slate-900/90 border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 code-font cursor-pointer" data-expected="/footer" onclick="clearSlot(this)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event)">Закриваючий</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Draggable Tags Bank -->
+                <div class="lg:col-span-5 flex flex-col justify-between bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                    <div>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-toolbox text-sky-400"></i> Набір тегів HTML5
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-3">Усі теги перемішано! Перетягуй відкриваючі та закриваючі теги у відповідні слоти. Увага: серед них є зайві несемантичні/застарілі теги!</p>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2">
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/main" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/main&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="header" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;header&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="div" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;div&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/aside" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/aside&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="nav" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;nav&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/footer" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/footer&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="article" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;article&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/header" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/header&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="center" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;center&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="main" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;main&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/nav" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/nav&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/div" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/div&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="aside" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;aside&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/article" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/article&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="footer" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;footer&gt;</div>
+                            <div draggable="true" ondragstart="dragStart(event)" data-tag="/center" class="draggable-item bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-sky-500 text-sky-300 code-font text-xs py-2 px-2.5 rounded-lg text-center font-medium shadow">&lt;/center&gt;</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-t border-slate-800">
+                        <div id="feedback-1" class="hidden mb-3 p-3 rounded-xl text-xs"></div>
+                        <button onclick="checkLevel1()" class="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check-double"></i> Перевірити структуру (12 слотів)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= LEVEL 2: CODE BUG HUNTER ================= -->
+        <section id="level-2" class="level-section hidden">
+            <div class="mb-6">
+                <span class="px-2.5 py-1 text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-md">Завдання 2 • Правила синтаксису (25 балів)</span>
+                <h2 class="text-2xl font-bold text-white mt-2">Детектор багів: Знайди 10 помилок у коді</h2>
+                <p class="text-slate-400 text-sm mt-1">У великому HTML-документі (35 рядків) заховано <strong>10 синтаксичних та семантичних помилок</strong>. Клікай на підозрілі рядки та виправляй їх!</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Code Editor View -->
+                <div class="lg:col-span-7 bg-[#0d1117] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between">
+                        <span class="text-xs text-slate-400 code-font"><i class="fa-brands fa-html5 text-orange-500 mr-1.5"></i>school_portal.html (35 рядків)</span>
+                        <span class="text-xs text-slate-400">Виправлено помилок: <strong id="bugs-found-count" class="text-emerald-400">0 / 10</strong></span>
+                    </div>
+                    <div id="code-lines-container" class="p-3 code-font text-xs space-y-0.5 overflow-x-auto max-h-[580px] overflow-y-auto">
+                        <!-- Rendered via JS -->
+                    </div>
+                </div>
+
+                <!-- Fix Panel -->
+                <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                    <div id="bug-inspector">
+                        <div class="text-center py-12">
+                            <div class="w-14 h-14 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center mx-auto mb-3 text-2xl">
+                                <i class="fa-solid fa-bug"></i>
+                            </div>
+                            <h3 class="text-base font-semibold text-slate-300">Обери рядок коду ліворуч</h3>
+                            <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">Перевір метатеги в &lt;head&gt;, правильність закриття парних тегів, атрибути зображень, посилань, списків, таблиць та форм.</p>
+                        </div>
+                    </div>
+
+                    <div id="level-2-complete-banner" class="hidden mt-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-center">
+                        <i class="fa-solid fa-trophy text-2xl text-emerald-400 mb-1"></i>
+                        <h4 class="font-bold text-emerald-300 text-sm">Усі 10 багів успішно виправлено!</h4>
+                        <p class="text-xs text-slate-300 mt-1">Код тепер повністю валідний за стандартом W3C HTML5.</p>
+                        <button onclick="switchTab(3)" class="mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition">
+                            Перейти до Завдання 3 <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= LEVEL 3: LIVE CSS SANDBOX ================= -->
+        <section id="level-3" class="level-section hidden">
+            <div class="mb-6">
+                <span class="px-2.5 py-1 text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-md">Завдання 3 • Практика CSS (25 балів)</span>
+                <h2 class="text-2xl font-bold text-white mt-2">CSS-стиліст: Оформи картку розробника (10 вимог)</h2>
+                <p class="text-slate-400 text-sm mt-1">Напиши правильні CSS-правила в редакторі нижче, щоб виконати всі 10 пунктів технічного завдання.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- CSS Editor & Requirements -->
+                <div class="lg:col-span-6 space-y-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 max-h-[260px] overflow-y-auto">
+                        <div class="flex items-center justify-between mb-2.5 sticky top-0 bg-slate-900 pb-1">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-purple-400"></i> Технічне завдання (10 пунктів):
+                            </h3>
+                            <span id="css-req-counter" class="text-xs font-bold text-purple-400">0 / 10</span>
+                        </div>
+                        <ul class="space-y-1.5 text-xs text-slate-300">
+                            <li id="req-1" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>1. Для <code class="text-amber-300">.card</code> задай колір фону <code class="text-sky-300">#1e293b</code></span></li>
+                            <li id="req-2" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>2. Для <code class="text-amber-300">.card</code> задай заокруглення кутів <code class="text-sky-300">16px</code></span></li>
+                            <li id="req-3" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>3. Для <code class="text-amber-300">.card</code> вирівняй текст по центру (<code class="text-sky-300">center</code>)</span></li>
+                            <li id="req-4" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>4. Для <code class="text-amber-300">.badge</code> задай колір фону <code class="text-sky-300">#0284c7</code></span></li>
+                            <li id="req-5" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>5. Для <code class="text-amber-300">.badge</code> перетвори всі літери на великі (<code class="text-sky-300">uppercase</code>)</span></li>
+                            <li id="req-6" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>6. Для заголовка <code class="text-amber-300">h3</code> задай колір тексту <code class="text-sky-300">#38bdf8</code></span></li>
+                            <li id="req-7" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>7. Для заголовка <code class="text-amber-300">h3</code> задай розмір шрифту <code class="text-sky-300">22px</code></span></li>
+                            <li id="req-8" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>8. Для опису <code class="text-amber-300">.role</code> задай колір тексту <code class="text-sky-300">#cbd5e1</code></span></li>
+                            <li id="req-9" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>9. Для кнопки <code class="text-amber-300">#follow-btn</code> задай колір фону <code class="text-sky-300">#10b981</code></span></li>
+                            <li id="req-10" class="flex items-start gap-2"><i class="fa-regular fa-circle text-slate-500 mt-0.5"></i><span>10. Для кнопки <code class="text-amber-300">#follow-btn</code> задай ширину <code class="text-sky-300">100%</code></span></li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-[#0d1117] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+                            <span class="text-xs text-slate-400 code-font"><i class="fa-brands fa-css3-alt text-sky-400 mr-1.5"></i>style.css</span>
+                            <button onclick="fillCssHint()" class="text-xs text-purple-400 hover:text-purple-300">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Показати готовий еталон
+                            </button>
+                        </div>
+                        <textarea id="css-editor" oninput="updateLivePreview()" rows="14" class="w-full bg-transparent text-emerald-300 code-font text-xs sm:text-sm p-4 focus:outline-none resize-none" spellcheck="false">/* Допиши потрібні властивості у відповідні селектори */
+.card {
+  padding: 24px;
+  border: 2px solid #334155;
+  
+}
+
+.badge {
+  color: white;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-bottom: 10px;
+  
+}
+
+h3 {
+  font-weight: 700;
+  margin-bottom: 4px;
+  
+}
+
+.role {
+  font-size: 14px;
+  margin-bottom: 16px;
+  
+}
+
+#follow-btn {
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  
+}</textarea>
+                    </div>
+                </div>
+
+                <!-- Live Preview Box -->
+                <div class="lg:col-span-6 flex flex-col justify-between bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Попередній перегляд у браузері</span>
+                            <span class="px-2 py-0.5 text-[11px] bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">Live Render</span>
+                        </div>
+
+                        <!-- HTML Structure Reference -->
+                        <div class="bg-slate-950/70 border border-slate-800 rounded-lg p-3 mb-5 code-font text-xs text-slate-400">
+                            &lt;div <span class="text-amber-300">class="card"</span>&gt;<br>
+                            &nbsp;&nbsp;&lt;span <span class="text-amber-300">class="badge"</span>&gt;PRO Mentor&lt;/span&gt;<br>
+                            &nbsp;&nbsp;&lt;<span class="text-sky-300">h3</span>&gt;Олена Коваленко&lt;/<span class="text-sky-300">h3</span>&gt;<br>
+                            &nbsp;&nbsp;&lt;p <span class="text-amber-300">class="role"</span>&gt;Frontend-розробниця • Київ&lt;/p&gt;<br>
+                            &nbsp;&nbsp;&lt;button <span class="text-emerald-300">id="follow-btn"</span>&gt;Підписатися&lt;/button&gt;<br>
+                            &lt;/div&gt;
+                        </div>
+
+                        <!-- Rendered Sandbox -->
+                        <div class="bg-slate-950 rounded-xl p-8 flex items-center justify-center border border-slate-800 min-h-[250px]">
+                            <style id="dynamic-style"></style>
+                            <div id="preview-wrapper" class="w-full max-w-xs">
+                                <div class="card" style="transition: all 0.3s ease;">
+                                    <span class="badge">PRO Mentor</span>
+                                    <h3>Олена Коваленко</h3>
+                                    <p class="role">Frontend-розробниця • Київ</p>
+                                    <button id="follow-btn">Підписатися</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="css-success-msg" class="hidden mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+                        <p class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Ідеально! Усі 10 CSS-правил застосовано правильно (+25 балів).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= LEVEL 4: QUICK SCENARIO QUIZ ================= -->
+        <section id="level-4" class="level-section hidden">
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <span class="px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-md">Завдання 4 • Бліц-практикум (25 балів)</span>
+                    <h2 class="text-2xl font-bold text-white mt-2">Практичні кейси: 24 завдання різних форматів</h2>
+                    <p class="text-slate-400 text-sm mt-1">Тести з однією або кількома правильними відповідями, а також інтерактивні завдання на встановлення відповідності (Drag & Drop).</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-300">
+                    Виконано завдань: <strong id="quiz-progress-counter" class="text-amber-400">0 / 24</strong>
+                </div>
+            </div>
+
+            <div id="quiz-container" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Rendered via JS -->
+            </div>
+
+            <div id="final-summary" class="hidden mt-8 bg-gradient-to-br from-slate-900 to-indigo-950 border border-indigo-500/30 rounded-2xl p-8 text-center max-w-3xl mx-auto shadow-2xl">
+                <div class="w-16 h-16 rounded-full bg-amber-400/20 text-amber-400 flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white">Тренування завершено!</h3>
+                <p class="text-slate-300 text-sm mt-2">Твій підсумковий результат підготовки до контрольної роботи:</p>
+                <div class="text-4xl font-extrabold text-amber-400 my-4">
+                    <span id="final-score-display">0</span> <span class="text-lg text-slate-400 font-normal">/ 100 балів</span>
+                </div>
+                <p id="final-verdict" class="text-xs sm:text-sm text-slate-300 mb-6 max-w-lg mx-auto"></p>
+                <button onclick="location.reload()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition shadow-lg">
+                    <i class="fa-solid fa-rotate-right mr-2"></i>Пройти тренажер ще раз
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        Інтерактивний навчальний матеріал з інформатики • 10 клас • Модуль 2: HTML5 + CSS3
+    </footer>
+
+    <script>
+        // Global State
+        const scores = { 1: 0, 2: 0, 3: 0, 4: 0 };
+        const completed = { 1: false, 2: false, 3: false, 4: false };
+
+        function updateScoreDisplay() {
+            const total = scores[1] + scores[2] + scores[3] + scores[4];
+            document.getElementById('total-score').textContent = total;
+
+            const doneCount = Object.values(completed).filter(Boolean).length;
+            document.getElementById('progress-bar').style.width = `${(doneCount / 4) * 100}%`;
+            document.getElementById('progress-text').textContent = `${doneCount}/4`;
+
+            for (let i = 1; i <= 4; i++) {
+                if (completed[i]) {
+                    document.getElementById(`check-${i}`).classList.remove('hidden');
+                }
+            }
+        }
+
+        function switchTab(tabNum) {
+            document.querySelectorAll('.level-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`level-${tabNum}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-sky-500', 'text-sky-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+            const activeBtn = document.getElementById(`tab-btn-${tabNum}`);
+            activeBtn.classList.remove('border-transparent', 'text-slate-400');
+            activeBtn.classList.add('border-sky-500', 'text-sky-400');
+        }
+
+        // ================= LEVEL 1 LOGIC =================
+        let draggedTag = null;
+
+        function dragStart(e) {
+            draggedTag = e.target.getAttribute('data-tag');
+            e.dataTransfer.setData('text/plain', draggedTag);
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function leaveDrop(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetBox = e.currentTarget;
+            targetBox.classList.remove('drag-over');
+
+            const tag = e.dataTransfer.getData('text/plain') || draggedTag;
+            if (!tag) return;
+
+            targetBox.textContent = `<${tag}>`;
+            targetBox.setAttribute('data-placed', tag);
+            targetBox.classList.remove('text-slate-500', 'border-slate-600', 'border-emerald-500', 'border-rose-500', 'text-emerald-400', 'text-rose-400', 'bg-emerald-950/30', 'bg-rose-950/30');
+            targetBox.classList.add('text-sky-300', 'border-sky-500', 'font-bold', 'bg-sky-950/40');
+        }
+
+        function clearSlot(slot) {
+            const isClosing = slot.getAttribute('data-expected').startsWith('/');
+            slot.textContent = isClosing ? 'Закриваючий' : 'Відкриваючий';
+            slot.removeAttribute('data-placed');
+            slot.classList.remove('text-sky-300', 'border-sky-500', 'font-bold', 'bg-sky-950/40', 'border-emerald-500', 'border-rose-500', 'text-emerald-400', 'text-rose-400', 'bg-emerald-950/30', 'bg-rose-950/30');
+            slot.classList.add('text-slate-500', 'border-slate-600');
+        }
+
+        function resetLevel1() {
+            document.querySelectorAll('#level-1 .slot-target').forEach(slot => {
+                clearSlot(slot);
+            });
+            const fb = document.getElementById('feedback-1');
+            fb.classList.add('hidden');
+        }
+
+        function checkLevel1() {
+            const slots = document.querySelectorAll('#level-1 .slot-target');
+            let correctCount = 0;
+
+            slots.forEach(slot => {
+                const expected = slot.getAttribute('data-expected');
+                const placed = slot.getAttribute('data-placed');
+
+                slot.classList.remove('border-sky-500', 'border-emerald-500', 'border-rose-500', 'text-sky-300', 'text-emerald-400', 'text-rose-400', 'bg-sky-950/40', 'bg-emerald-950/30', 'bg-rose-950/30');
+
+                if (placed === expected) {
+                    correctCount++;
+                    slot.classList.add('border-emerald-500', 'text-emerald-400', 'bg-emerald-950/30');
+                } else {
+                    slot.classList.add('border-rose-500', 'text-rose-400', 'bg-rose-950/30');
+                }
+            });
+
+            const fb = document.getElementById('feedback-1');
+            fb.classList.remove('hidden');
+
+            if (correctCount === 12) {
+                fb.className = 'mb-3 p-3 rounded-xl text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-300';
+                fb.innerHTML = '<strong><i class="fa-solid fa-circle-check mr-1"></i> Бездоганно!</strong> Усі 12 відкриваючих та закриваючих семантичних тегів на своїх місцях (+25 балів).';
+                scores[1] = 25;
+                completed[1] = true;
+                updateScoreDisplay();
+            } else {
+                fb.className = 'mb-3 p-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-300';
+                fb.innerHTML = `<strong>Правильно: ${correctCount} з 12.</strong> Перевір червоні слоти (зверни увагу на скісний слеш <code>/</code> у закриваючих тегах).`;
+            }
+        }
+
+        // ================= LEVEL 2 LOGIC (BUG HUNTER - 35 LINES, 10 BUGS) =================
+        const codeLines = [
+            { num: 1, code: '<!DOCTYPE html>', hasBug: false },
+            { num: 2, code: '<html lang="uk">', hasBug: false },
+            { num: 3, code: '<head>', hasBug: false },
+            {
+                num: 4,
+                code: '  <meta encoding="UTF-8">',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '  <meta charset="UTF-8">',
+                title: 'Баг #1 (рядок 4): Неправильний атрибут кодування',
+                desc: 'У HTML5 для вказівки кодування сторінки використовується атрибут charset, а не encoding.',
+                options: [
+                    { text: '<meta charset="UTF-8">', correct: true },
+                    { text: '<meta code="UTF-8">', correct: false },
+                    { text: '<charset="UTF-8">', correct: false }
+                ]
+            },
+            {
+                num: 5,
+                code: '  <title>Шкільний портал ліцею<title>',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '  <title>Шкільний портал ліцею</title>',
+                title: 'Баг #2 (рядок 5): Незакритий парний тег <title>',
+                desc: 'Парний тег <title> обов’язково повинен закриватися тегом </title> зі слешем.',
+                options: [
+                    { text: '<title>Шкільний портал ліцею</title>', correct: true },
+                    { text: '<title name="Шкільний портал ліцею" />', correct: false },
+                    { text: '<head>Шкільний портал ліцею</head>', correct: false }
+                ]
+            },
+            {
+                num: 6,
+                code: '  <link rel="stylesheet" src="styles.css">',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '  <link rel="stylesheet" href="styles.css">',
+                title: 'Баг #3 (рядок 6): Помилковий атрибут шляху в <link>',
+                desc: 'Тег <link> використовує атрибут href для вказівки шляху до CSS-файлу, а не src.',
+                options: [
+                    { text: '<link rel="stylesheet" href="styles.css">', correct: true },
+                    { text: '<link rel="css" url="styles.css">', correct: false },
+                    { text: '<style href="styles.css"></style>', correct: false }
+                ]
+            },
+            { num: 7, code: '</head>', hasBug: false },
+            { num: 8, code: '<body>', hasBug: false },
+            { num: 9, code: '  <header>', hasBug: false },
+            {
+                num: 10,
+                code: '    <h1>Науковий <strong>ліцей №1</h1></strong>',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '    <h1>Науковий <strong>ліцей №1</strong></h1>',
+                title: 'Баг #4 (рядок 10): Порушення порядку вкладеності тегів',
+                desc: 'Вкладені теги закриваються у зворотному порядку: спочатку внутрішній </strong>, потім зовнішній </h1>.',
+                options: [
+                    { text: '<h1>Науковий <strong>ліцей №1</strong></h1>', correct: true },
+                    { text: '<h1><strong>Науковий ліцей №1</h1>', correct: false },
+                    { text: '<h1>Науковий <strong/>ліцей №1</h1>', correct: false }
+                ]
+            },
+            { num: 11, code: '    <nav>', hasBug: false },
+            {
+                num: 12,
+                code: '      <a link="news.html">Новини ліцею</a>',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '      <a href="news.html">Новини ліцею</a>',
+                title: 'Баг #5 (рядок 12): Неправильний атрибут гіперпосилання',
+                desc: 'Адреса посилання в тегу <a> задається виключно атрибутом href.',
+                options: [
+                    { text: '<a href="news.html">Новини ліцею</a>', correct: true },
+                    { text: '<a src="news.html">Новини ліцею</a>', correct: false },
+                    { text: '<a target="news.html">Новини ліцею</a>', correct: false }
+                ]
+            },
+            { num: 13, code: '    </nav>', hasBug: false },
+            { num: 14, code: '  </header>', hasBug: false },
+            { num: 15, code: '  <main>', hasBug: false },
+            { num: 16, code: '    <section>', hasBug: false },
+            { num: 17, code: '      <h2>Наші досягнення</h2>', hasBug: false },
+            {
+                num: 18,
+                code: '      <img href="team.jpg" alt="Команда олімпіадників">',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '      <img src="team.jpg" alt="Команда олімпіадників">',
+                title: 'Баг #6 (рядок 18): Помилковий атрибут джерела зображення',
+                desc: 'Для вказівки шляху до файлу зображення в тегу <img> використовується атрибут src.',
+                options: [
+                    { text: '<img src="team.jpg" alt="Команда олімпіадників">', correct: true },
+                    { text: '<img link="team.jpg" alt="Команда олімпіадників">', correct: false },
+                    { text: '<img>team.jpg</img>', correct: false }
+                ]
+            },
+            {
+                num: 19,
+                code: '      <p>Ми посіли 1 місце на обласній олімпіаді.<br></br></p>',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '      <p>Ми посіли 1 місце на обласній олімпіаді.<br></p>',
+                title: 'Баг #7 (рядок 19): Закриваючий тег для одинарного елемента <br>',
+                desc: 'Тег перенесення рядка <br> є порожнім (одинарним) і не має закриваючого тегу </br>.',
+                options: [
+                    { text: '<p>Ми посіли 1 місце на обласній олімпіаді.<br></p>', correct: true },
+                    { text: '<p>Ми посіли 1 місце на обласній олімпіаді.<break></p>', correct: false },
+                    { text: '<p>Ми посіли 1 місце на обласній олімпіаді.</br></p>', correct: false }
+                ]
+            },
+            { num: 20, code: '    </section>', hasBug: false },
+            { num: 21, code: '    <section>', hasBug: false },
+            { num: 22, code: '      <h2>Етапи підготовки до контрольної:</h2>', hasBug: false },
+            {
+                num: 23,
+                code: '      <ul type="1">',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '      <ol>',
+                title: 'Баг #8 (рядок 23): Неправильний тег для нумерованого списку',
+                desc: 'Тег <ul> призначений для маркованого списку. Нумерований список створюється тегом <ol> (у парі з </ol> у рядку 26).',
+                options: [
+                    { text: '<ol>', correct: true },
+                    { text: '<nl>', correct: false },
+                    { text: '<list-num>', correct: false }
+                ]
+            },
+            { num: 24, code: '        <li>Повторити семантичні теги HTML5</li>', hasBug: false },
+            { num: 25, code: '        <li>Закріпити селектори CSS</li>', hasBug: false },
+            {
+                num: 26,
+                code: '      </ul>',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '      </ol>',
+                title: 'Баг #9 (рядок 26): Невідповідний закриваючий тег списку',
+                desc: 'Оскільки нумерований список відкривається тегом <ol>, закривати його потрібно тегом </ol>.',
+                options: [
+                    { text: '</ol>', correct: true },
+                    { text: '</nl>', correct: false },
+                    { text: '</li>', correct: false }
+                ]
+            },
+            { num: 27, code: '    </section>', hasBug: false },
+            { num: 28, code: '  </main>', hasBug: false },
+            { num: 29, code: '  <footer>', hasBug: false },
+            { num: 30, code: '    <p>© 2026 Усі права захищено</p>', hasBug: false },
+            {
+                num: 31,
+                code: '    <button type="click">Зв’язатися з адміністрацією</button>',
+                hasBug: true,
+                fixed: false,
+                fixedCode: '    <button type="button">Зв’язатися з адміністрацією</button>',
+                title: 'Баг #10 (рядок 31): Неіснуюче значення атрибута type у <button>',
+                desc: 'Атрибут type для тегу <button> може набувати значень "button", "submit" або "reset", але не "click".',
+                options: [
+                    { text: '<button type="button">Зв’язатися з адміністрацією</button>', correct: true },
+                    { text: '<button type="press">Зв’язатися з адміністрацією</button>', correct: false },
+                    { text: '<button action="click">Зв’язатися з адміністрацією</button>', correct: false }
+                ]
+            },
+            { num: 32, code: '  </footer>', hasBug: false },
+            { num: 33, code: '  <!-- Кінець видимого вмісту сторінки -->', hasBug: false },
+            { num: 34, code: '</body>', hasBug: false },
+            { num: 35, code: '</html>', hasBug: false }
+        ];
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function renderCodeLines() {
+            const container = document.getElementById('code-lines-container');
+            container.innerHTML = '';
+
+            codeLines.forEach((line, idx) => {
+                const div = document.createElement('div');
+                let bgClass = 'bug-line px-2 py-1 rounded flex items-center gap-3';
+                if (line.hasBug && line.fixed) {
+                    bgClass += ' bg-emerald-500/15 text-emerald-300 border-l-2 border-emerald-500';
+                } else {
+                    bgClass += ' text-slate-300';
+                }
+
+                div.className = bgClass;
+                div.onclick = () => inspectLine(idx);
+
+                const displayCode = line.fixed ? line.fixedCode : line.code;
+                div.innerHTML = `
+                    <span class="text-slate-600 select-none w-5 text-right">${line.num}</span>
+                    <span class="whitespace-pre">${escapeHtml(displayCode)}</span>
+                    ${line.fixed ? '<i class="fa-solid fa-check text-emerald-400 ml-auto text-xs"></i>' : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function inspectLine(idx) {
+            const line = codeLines[idx];
+            const inspector = document.getElementById('bug-inspector');
+
+            if (!line.hasBug) {
+                inspector.innerHTML = `
+                    <div class="p-4 bg-slate-800/60 border border-slate-700 rounded-xl">
+                        <span class="text-xs font-semibold text-sky-400">Рядок ${line.num}</span>
+                        <h4 class="text-base font-bold text-white mt-1">Тут помилок немає!</h4>
+                        <p class="text-xs text-slate-400 mt-1">Цей рядок написаний синтаксично правильно. Шукай далі!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (line.fixed) {
+                inspector.innerHTML = `
+                    <div class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                        <span class="text-xs font-semibold text-emerald-400">Рядок ${line.num} виправлено</span>
+                        <h4 class="text-base font-bold text-white mt-1">${escapeHtml(line.title)}</h4>
+                        <p class="text-xs text-slate-300 mt-1">${escapeHtml(line.desc)}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let optionsHtml = line.options.map((opt, oIdx) => `
+                <button onclick="applyBugFix(${idx}, ${oIdx})" class="w-full text-left p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-sky-500 code-font text-xs text-slate-200 transition">
+                    ${escapeHtml(opt.text)}
+                </button>
+            `).join('');
+
+            inspector.innerHTML = `
+                <div>
+                    <span class="px-2 py-0.5 text-[11px] font-semibold bg-rose-500/20 text-rose-400 rounded">Знайдено баг!</span>
+                    <h4 class="text-base font-bold text-white mt-2">${escapeHtml(line.title)}</h4>
+                    <p class="text-xs text-slate-400 mt-1 mb-4">${escapeHtml(line.desc)}</p>
+                    <p class="text-xs font-semibold text-slate-300 mb-2">Обери правильний варіант коду:</p>
+                    <div class="space-y-2" id="bug-options-${idx}">
+                        ${optionsHtml}
+                    </div>
+                    <div id="bug-error-msg" class="hidden mt-3 text-xs text-rose-400">
+                        <i class="fa-solid fa-circle-xmark mr-1"></i> Неправильний варіант. Спробуй інший!
+                    </div>
+                </div>
+            `;
+        }
+
+        function applyBugFix(lineIdx, optIdx) {
+            const line = codeLines[lineIdx];
+            const chosen = line.options[optIdx];
+
+            if (chosen.correct) {
+                line.fixed = true;
+                renderCodeLines();
+                inspectLine(lineIdx);
+
+                const fixedCount = codeLines.filter(l => l.hasBug && l.fixed).length;
+                document.getElementById('bugs-found-count').textContent = `${fixedCount} / 10`;
+
+                if (fixedCount === 10) {
+                    scores[2] = 25;
+                    completed[2] = true;
+                    updateScoreDisplay();
+                    document.getElementById('level-2-complete-banner').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('bug-error-msg').classList.remove('hidden');
+            }
+        }
+
+        renderCodeLines();
+
+        // ================= LEVEL 3 LOGIC (LIVE CSS - 10 TASKS) =================
+        function updateLivePreview() {
+            const cssText = document.getElementById('css-editor').value;
+            const scopedCss = cssText
+                .replace(/\.card/g, '#preview-wrapper .card')
+                .replace(/\.badge/g, '#preview-wrapper .badge')
+                .replace(/h3/g, '#preview-wrapper h3')
+                .replace(/\.role/g, '#preview-wrapper .role')
+                .replace(/#follow-btn/g, '#preview-wrapper #follow-btn');
+            
+            document.getElementById('dynamic-style').textContent = scopedCss;
+
+            // Validate 10 rules via normalized string check
+            const clean = cssText.replace(/\s+/g, '').toLowerCase();
+
+            const checks = [
+                /\.card\{[^}]*background-color:#1e293b;?[^}]*\}/.test(clean),
+                /\.card\{[^}]*border-radius:16px;?[^}]*\}/.test(clean),
+                /\.card\{[^}]*text-align:center;?[^}]*\}/.test(clean),
+                /\.badge\{[^}]*background-color:#0284c7;?[^}]*\}/.test(clean),
+                /\.badge\{[^}]*text-transform:uppercase;?[^}]*\}/.test(clean),
+                /h3\{[^}]*color:#38bdf8;?[^}]*\}/.test(clean),
+                /h3\{[^}]*font-size:22px;?[^}]*\}/.test(clean),
+                /\.role\{[^}]*color:#cbd5e1;?[^}]*\}/.test(clean),
+                /#follow-btn\{[^}]*background-color:#10b981;?[^}]*\}/.test(clean),
+                /#follow-btn\{[^}]*width:100%;?[^}]*\}/.test(clean)
+            ];
+
+            let passedCount = 0;
+            checks.forEach((passed, idx) => {
+                if (passed) passedCount++;
+                toggleReqStatus(`req-${idx + 1}`, passed);
+            });
+
+            document.getElementById('css-req-counter').textContent = `${passedCount} / 10`;
+
+            if (passedCount === 10) {
+                scores[3] = 25;
+                completed[3] = true;
+                updateScoreDisplay();
+                document.getElementById('css-success-msg').classList.remove('hidden');
+            }
+        }
+
+        function toggleReqStatus(id, passed) {
+            const el = document.getElementById(id);
+            const icon = el.querySelector('i');
+            if (passed) {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400 mt-0.5';
+                el.classList.add('text-emerald-300');
+            } else {
+                icon.className = 'fa-regular fa-circle text-slate-500 mt-0.5';
+                el.classList.remove('text-emerald-300');
+            }
+        }
+
+        function fillCssHint() {
+            const editor = document.getElementById('css-editor');
+            editor.value = `.card {
+  padding: 24px;
+  border: 2px solid #334155;
+  background-color: #1e293b;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.badge {
+  color: white;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-bottom: 10px;
+  background-color: #0284c7;
+  text-transform: uppercase;
+}
+
+h3 {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #38bdf8;
+  font-size: 22px;
+}
+
+.role {
+  font-size: 14px;
+  margin-bottom: 16px;
+  color: #cbd5e1;
+}
+
+#follow-btn {
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #10b981;
+  width: 100%;
+}`;
+            updateLivePreview();
+        }
+
+        updateLivePreview();
+
+        // ================= LEVEL 4 LOGIC (24 MULTI-FORMAT SCENARIO QUESTIONS) =================
+        // Types: 'single' (1 correct), 'multi' (multiple correct), 'match' (Drag & Drop pairs)
+        const scenarios = [
+            {
+                type: 'single',
+                q: "1. Який рядок обов’язково ставиться на самому початку HTML5-документа?",
+                options: ['<!DOCTYPE html>', '<html version="5">', '<doctype html5>'],
+                correct: 0,
+                explanation: 'Оголошення <!DOCTYPE html> повідомляє браузеру, що документ написаний за стандартом HTML5.'
+            },
+            {
+                type: 'multi',
+                q: "2. Обери ВСІ теги, які зазвичай розміщуються всередині службової секції <head>:",
+                options: ['<meta charset="UTF-8">', '<title>Назва сторінки</title>', '<header>Шапка сайту</header>', '<link rel="stylesheet" href="style.css">'],
+                correct: [0, 1, 3],
+                explanation: 'У <head> містяться метадані (<meta>), заголовок вкладки (<title>) та підключення стилів (<link>). Блок <header> розміщується у <body>.'
+            },
+            {
+                type: 'match',
+                q: "3. Встанови відповідність між семантичними тегами HTML5 та їхнім призначенням (перетягни теги):",
+                pairs: [
+                    { label: 'Головне меню навігації сайту', answer: '<nav>' },
+                    { label: 'Самостійна стаття або пост у блозі', answer: '<article>' },
+                    { label: 'Бічна панель із фільтрами чи рекламою', answer: '<aside>' }
+                ],
+                distractors: ['<span>'],
+                explanation: '<nav> — навігація, <article> — незалежна публікація, <aside> — бічна панель (сайдбар).'
+            },
+            {
+                type: 'single',
+                q: "4. Де відображається текст, записаний усередині тегу <title>...</title>?",
+                options: ['На вкладці браузера та в результатах пошуку', 'У верхній шапці самої вебсторінки', 'У нижньому колонтитулі сайту'],
+                correct: 0,
+                explanation: 'Тег <title> знаходиться в службовому блоці <head> і задає назву вкладки браузера.'
+            },
+            {
+                type: 'multi',
+                q: "5. Обери ВСІ одинарні (порожні) теги HTML5, які НЕ мають закриваючого тегу:",
+                options: ['<br>', '<img src="photo.jpg" alt="Фото">', '<p>', '<hr>', '<a>'],
+                correct: [0, 1, 3],
+                explanation: '<br> (перенесення рядка), <img> (зображення) та <hr> (горизонтальна лінія) — порожні елементи без закриваючого тегу.'
+            },
+            {
+                type: 'single',
+                q: "6. Скільки видимих тегів <main> може бути на одній HTML5-сторінці?",
+                options: ['Лише один унікальний блок <main>', 'Стільки ж, скільки абзаців тексту', 'По одному всередині кожного <article>'],
+                correct: 0,
+                explanation: 'Елемент <main> містить основний унікальний контент сторінки, тому він має бути єдиним.'
+            },
+            {
+                type: 'match',
+                q: "7. Встанови відповідність між тегами та атрибутами, які для них використовуються:",
+                pairs: [
+                    { label: 'Вказує адресу переходу для <a ...>', answer: 'href' },
+                    { label: 'Вказує шлях до файлу для <img ...>', answer: 'src' },
+                    { label: 'Задає альтернативний текст для <img ...>', answer: 'alt' }
+                ],
+                distractors: ['charset'],
+                explanation: 'Для посилань <a> використовується href, а для зображень <img> — src та alt.'
+            },
+            {
+                type: 'single',
+                q: "8. Який атрибут змушує посилання відкритися у новій вкладці браузера?",
+                options: ['target="_blank"', 'open="new-tab"', 'rel="external"'],
+                correct: 0,
+                explanation: 'Значення _blank атрибута target відкриває документ у новій вкладці.'
+            },
+            {
+                type: 'multi',
+                q: "9. Які з наведених тегів використовуються для побудови HTML-таблиць?",
+                options: ['<tr>', '<td>', '<th>', '<li-row>', '<table>'],
+                correct: [0, 1, 2, 4],
+                explanation: 'Таблиця створюється тегом <table>, рядки — <tr>, заголовкові комірки — <th>, звичайні комірки — <td>.'
+            },
+            {
+                type: 'single',
+                q: "10. Яка комбінація тегів створює НУМЕРОВАНИЙ список?",
+                options: ['<ul> та <li>', '<ol> та <li>', '<dl> та <dt>'],
+                correct: 1,
+                explanation: '<ol> (Ordered List) створює нумерований список, а кожен пункт огортається в <li>.'
+            },
+            {
+                type: 'match',
+                q: "11. З’єднай типи CSS-селекторів із прикладами їхнього правильного запису:",
+                pairs: [
+                    { label: 'Селектор класу', answer: '.card-box' },
+                    { label: 'Селектор ідентифікатора (ID)', answer: '#main-banner' },
+                    { label: 'Селектор тегу (елемента)', answer: 'article' }
+                ],
+                distractors: ['@media'],
+                explanation: 'Клас починається з крапки (.), ID — зі знака решітки (#), а тег записується без префіксів.'
+            },
+            {
+                type: 'single',
+                q: "12. Чим тег <th> відрізняється від звичайної комірки <td>?",
+                options: ['<th> позначає заголовок стовпця/рядка (жирний текст по центру)', '<th> об’єднує всю таблицю в один блок', '<th> використовується лише в підвалі таблиці'],
+                correct: 0,
+                explanation: '<th> (Table Header) семантично виділяє заголовкову комірку таблиці.'
+            },
+            {
+                type: 'multi',
+                q: "13. Якими способами можна підключити або додати CSS-стилі до HTML-документа?",
+                options: ['Зовнішній файл через <link rel="stylesheet" href="...">', 'Внутрішній блок <style>...</style> у <head>', 'Вбудований атрибут style="..." безпосередньо в тегу', 'Через тег <css src="...">'],
+                correct: [0, 1, 2],
+                explanation: 'Існують три валідні способи: зовнішня таблиця (<link>), внутрішня (<style>) та вбудована (атрибут style).'
+            },
+            {
+                type: 'single',
+                q: "14. Який селектор має НАЙВИЩИЙ пріоритет (специфічність) у CSS серед наведених?",
+                options: ['Селектор тегу (p)', 'Селектор класу (.text)', 'Селектор ідентифікатора (#intro)'],
+                correct: 2,
+                explanation: 'Ієрархія пріоритетів: вбудований style > #id > .class > тег.'
+            },
+            {
+                type: 'match',
+                q: "15. Встанови відповідність між елементами блокової моделі CSS та їхнім призначенням:",
+                pairs: [
+                    { label: 'Внутрішній відступ від рамки до тексту', answer: 'padding' },
+                    { label: 'Зовнішній відступ навколо блока', answer: 'margin' },
+                    { label: 'Лінія рамки навколо елемента', answer: 'border' }
+                ],
+                distractors: ['font-size'],
+                explanation: 'padding — внутрішній відступ, border — рамка, margin — зовнішній відступ.'
+            },
+            {
+                type: 'single',
+                q: "16. Яка властивість CSS змінює колір самого тексту?",
+                options: ['text-color', 'font-color', 'color'],
+                correct: 2,
+                explanation: 'Для кольору тексту в CSS використовується коротка властивість color.'
+            },
+            {
+                type: 'multi',
+                q: "17. Обери ВСІ синтаксично ПРАВИЛЬНІ CSS-правила:",
+                options: ['p { color: #ffffff; }', '.btn { border-radius: 8px; }', '#logo = { width: 120px }', 'h1 { font-size: 32px; margin: 0; }'],
+                correct: [0, 1, 3],
+                explanation: 'У CSS після селектора ставляться фігурні дужки { }, властивість і значення розділяються двокрапкою (:), а в кінці ставиться крапка з комою (;).'
+            },
+            {
+                type: 'single',
+                q: "18. Як правильно записати коментар у файлі CSS?",
+                options: ['<!-- Коментар -->', '/* Коментар */', '// Коментар'],
+                correct: 1,
+                explanation: 'У CSS коментарі завжди беруться в символи /* ... */.'
+            },
+            {
+                type: 'match',
+                q: "19. Встанови відповідність між CSS-властивістю та її дією на вигляд елемента:",
+                pairs: [
+                    { label: 'Заокруглює кути блока чи кнопки', answer: 'border-radius' },
+                    { label: 'Задає колір фону елемента', answer: 'background-color' },
+                    { label: 'Вирівнює текст по лівому/правому краю чи центру', answer: 'text-align' }
+                ],
+                distractors: ['list-style'],
+                explanation: 'border-radius заокруглює кути, background-color фарбує фон, text-align вирівнює рядковий вміст.'
+            },
+            {
+                type: 'single',
+                q: "20. Чим рядковий тег <span> відрізняється від блочного <div>?",
+                options: ['<span> не починається з нового рядка і займає ширину лише свого вмісту', '<span> може містити цілі розділи сайту з шапкою та підвалом', '<span> автоматично робить текст жирним'],
+                correct: 0,
+                explanation: '<span> — універсальний рядковий контейнер (inline), а <div> — блочний (block).'
+            },
+            {
+                type: 'multi',
+                q: "21. Які теги належать до СЕМАНТИЧНИХ елементів структури HTML5?",
+                options: ['<header>', '<footer>', '<section>', '<div>', '<span>'],
+                correct: [0, 1, 2],
+                explanation: '<header>, <footer> та <section> описують зміст блока, тоді як <div> і <span> є універсальними несемантичними контейнерами.'
+            },
+            {
+                type: 'single',
+                q: "22. Який тег заголовка має найвищий рівень важливості на вебсторінці?",
+                options: ['<h6>', '<h1>', '<head>'],
+                correct: 1,
+                explanation: '<h1> — головний заголовок сторінки найвищого рівня (від <h1> до <h6>).'
+            },
+            {
+                type: 'match',
+                q: "23. З’єднай HTML-теги списків із їхніми ролями:",
+                pairs: [
+                    { label: 'Контейнер маркованого списку', answer: '<ul>' },
+                    { label: 'Контейнер нумерованого списку', answer: '<ol>' },
+                    { label: 'Окремий пункт будь-якого списку', answer: '<li>' }
+                ],
+                distractors: ['<dd>'],
+                explanation: '<ul> — маркований список, <ol> — нумерований список, <li> — елемент списку.'
+            },
+            {
+                type: 'multi',
+                q: "24. Які з наведених значень може приймати атрибут type у тегу <button>?",
+                options: ['submit', 'button', 'reset', 'click'],
+                correct: [0, 1, 2],
+                explanation: 'Стандартні значення атрибута type для кнопки: "submit" (відправка форми), "reset" (очищення) та "button" (звичайна кнопка).'
+            }
+        ];
+
+        // State for each question
+        let quizState = scenarios.map(s => {
+            if (s.type === 'single') return { submitted: false, selected: null, isCorrect: false };
+            if (s.type === 'multi') return { submitted: false, selected: [], isCorrect: false };
+            if (s.type === 'match') {
+                // Shuffle pool of answers + distractors
+                const allChips = [...s.pairs.map(p => p.answer), ...(s.distractors || [])];
+                for (let i = allChips.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allChips[i], allChips[j]] = [allChips[j], allChips[i]];
+                }
+                return {
+                    submitted: false,
+                    slots: new Array(s.pairs.length).fill(null),
+                    pool: allChips,
+                    isCorrect: false
+                };
+            }
+        });
+
+        let quizDraggedChip = null;
+
+        function dragQuizChip(e, qIdx, chipVal) {
+            quizDraggedChip = { qIdx, chipVal };
+            e.dataTransfer.setData('text/plain', JSON.stringify(quizDraggedChip));
+        }
+
+        function allowQuizDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function leaveQuizDrop(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function dropQuizChip(e, qIdx, slotIdx) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            if (quizState[qIdx].submitted) return;
+
+            let data = quizDraggedChip;
+            try {
+                const raw = e.dataTransfer.getData('text/plain');
+                if (raw) data = JSON.parse(raw);
+            } catch (err) {}
+
+            if (!data || data.qIdx !== qIdx) return;
+
+            quizState[qIdx].slots[slotIdx] = data.chipVal;
+            renderScenarios();
+        }
+
+        function clearQuizSlot(qIdx, slotIdx) {
+            if (quizState[qIdx].submitted) return;
+            quizState[qIdx].slots[slotIdx] = null;
+            renderScenarios();
+        }
+
+        function toggleMultiOption(qIdx, oIdx) {
+            if (quizState[qIdx].submitted) return;
+            const sel = quizState[qIdx].selected;
+            const pos = sel.indexOf(oIdx);
+            if (pos === -1) sel.push(oIdx);
+            else sel.splice(pos, 1);
+            renderScenarios();
+        }
+
+        function submitMultiScenario(qIdx) {
+            const st = quizState[qIdx];
+            if (st.submitted || st.selected.length === 0) return;
+            const correctArr = [...scenarios[qIdx].correct].sort();
+            const userArr = [...st.selected].sort();
+            st.submitted = true;
+            st.isCorrect = correctArr.length === userArr.length && correctArr.every((v, i) => v === userArr[i]);
+            finalizeScenarioStep();
+        }
+
+        function submitMatchScenario(qIdx) {
+            const st = quizState[qIdx];
+            if (st.submitted || st.slots.includes(null)) return;
+            const item = scenarios[qIdx];
+            st.submitted = true;
+            st.isCorrect = item.pairs.every((p, idx) => st.slots[idx] === p.answer);
+            finalizeScenarioStep();
+        }
+
+        function answerScenario(qIdx, oIdx) {
+            const st = quizState[qIdx];
+            if (st.submitted) return;
+            st.submitted = true;
+            st.selected = oIdx;
+            st.isCorrect = (oIdx === scenarios[qIdx].correct);
+            finalizeScenarioStep();
+        }
+
+        function finalizeScenarioStep() {
+            renderScenarios();
+
+            const answeredCount = quizState.filter(s => s.submitted).length;
+            document.getElementById('quiz-progress-counter').textContent = `${answeredCount} / 24`;
+
+            const correctCount = quizState.filter(s => s.isCorrect).length;
+            scores[4] = Math.round((correctCount / scenarios.length) * 25);
+
+            if (answeredCount === scenarios.length) {
+                completed[4] = true;
+                showFinalSummary();
+            }
+            updateScoreDisplay();
+        }
+
+        function renderScenarios() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+
+            scenarios.forEach((item, qIdx) => {
+                const st = quizState[qIdx];
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col justify-between';
+
+                // Format badge
+                let badgeHtml = '';
+                if (item.type === 'single') {
+                    badgeHtml = '<span class="inline-block mb-2 px-2 py-0.5 text-[10px] font-semibold rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">Одна правильна відповідь</span>';
+                } else if (item.type === 'multi') {
+                    badgeHtml = '<span class="inline-block mb-2 px-2 py-0.5 text-[10px] font-semibold rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Декілька правильних відповідей</span>';
+                } else if (item.type === 'match') {
+                    badgeHtml = '<span class="inline-block mb-2 px-2 py-0.5 text-[10px] font-semibold rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Встанови відповідність (Drag & Drop)</span>';
+                }
+
+                let bodyHtml = '';
+
+                if (item.type === 'single') {
+                    bodyHtml = `<div class="space-y-1.5">` + item.options.map((opt, oIdx) => {
+                        let btnStyle = 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-200';
+                        if (st.submitted) {
+                            if (oIdx === item.correct) {
+                                btnStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-semibold';
+                            } else if (oIdx === st.selected) {
+                                btnStyle = 'bg-rose-500/20 border-rose-500 text-rose-300';
+                            } else {
+                                btnStyle = 'bg-slate-800/40 border-slate-800 text-slate-500';
+                            }
+                        }
+                        return `
+                            <button onclick="answerScenario(${qIdx}, ${oIdx})" ${st.submitted ? 'disabled' : ''} class="w-full text-left px-3.5 py-2 rounded-xl border text-xs code-font transition ${btnStyle}">
+                                ${escapeHtml(opt)}
+                            </button>
+                        `;
+                    }).join('') + `</div>`;
+                } else if (item.type === 'multi') {
+                    const optsHtml = item.options.map((opt, oIdx) => {
+                        const isChecked = st.selected.includes(oIdx);
+                        let btnStyle = isChecked
+                            ? 'bg-purple-500/20 border-purple-500 text-purple-200'
+                            : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-200';
+                        let iconClass = isChecked ? 'fa-solid fa-square-check text-purple-400' : 'fa-regular fa-square text-slate-500';
+
+                        if (st.submitted) {
+                            const shouldBeChecked = item.correct.includes(oIdx);
+                            if (shouldBeChecked) {
+                                btnStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-semibold';
+                                iconClass = 'fa-solid fa-square-check text-emerald-400';
+                            } else if (isChecked && !shouldBeChecked) {
+                                btnStyle = 'bg-rose-500/20 border-rose-500 text-rose-300';
+                                iconClass = 'fa-solid fa-square-xmark text-rose-400';
+                            } else {
+                                btnStyle = 'bg-slate-800/40 border-slate-800 text-slate-500';
+                                iconClass = 'fa-regular fa-square text-slate-600';
+                            }
+                        }
+
+                        return `
+                            <button onclick="toggleMultiOption(${qIdx}, ${oIdx})" ${st.submitted ? 'disabled' : ''} class="w-full text-left px-3.5 py-2 rounded-xl border text-xs code-font transition flex items-center gap-2.5 ${btnStyle}">
+                                <i class="${iconClass} text-sm"></i>
+                                <span>${escapeHtml(opt)}</span>
+                            </button>
+                        `;
+                    }).join('');
+
+                    const submitBtn = !st.submitted ? `
+                        <button onclick="submitMultiScenario(${qIdx})" ${st.selected.length === 0 ? 'disabled' : ''} class="mt-2.5 w-full py-2 rounded-xl text-xs font-semibold transition ${st.selected.length > 0 ? 'bg-purple-600 hover:bg-purple-500 text-white shadow' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                            Перевірити вибрані варіанти
+                        </button>
+                    ` : '';
+
+                    bodyHtml = `<div class="space-y-1.5">${optsHtml}</div>${submitBtn}`;
+                } else if (item.type === 'match') {
+                    const chipsHtml = !st.submitted ? `
+                        <div class="flex flex-wrap gap-1.5 mb-3 p-2 bg-slate-950/60 rounded-xl border border-slate-800">
+                            ${st.pool.map(chip => `
+                                <div draggable="true" ondragstart="dragQuizChip(event, ${qIdx}, '${chip.replace(/'/g, "\\'")}')" class="draggable-item px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-amber-400 rounded-lg text-xs code-font text-amber-300 font-medium shadow-sm">
+                                    ${escapeHtml(chip)}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '';
+
+                    const rowsHtml = item.pairs.map((pair, pIdx) => {
+                        const placedVal = st.slots[pIdx];
+                        let slotClass = 'border-dashed border-slate-600 bg-slate-950/80 text-slate-500';
+                        if (placedVal) {
+                            slotClass = 'border-amber-500 bg-amber-500/15 text-amber-300 font-semibold';
+                        }
+                        if (st.submitted) {
+                            if (placedVal === pair.answer) {
+                                slotClass = 'border-emerald-500 bg-emerald-500/20 text-emerald-300 font-semibold';
+                            } else {
+                                slotClass = 'border-rose-500 bg-rose-500/20 text-rose-300 font-semibold';
+                            }
+                        }
+
+                        return `
+                            <div class="flex items-center justify-between gap-2 bg-slate-800/40 p-2 rounded-xl border border-slate-800">
+                                <span class="text-[11px] text-slate-300 leading-tight flex-1">${escapeHtml(pair.label)}</span>
+                                <div onclick="clearQuizSlot(${qIdx}, ${pIdx})" ondragover="allowQuizDrop(event)" ondragleave="leaveQuizDrop(event)" ondrop="dropQuizChip(event, ${qIdx}, ${pIdx})" class="drop-zone min-h-[30px] min-w-[115px] px-2 py-1 rounded-lg border text-xs code-font flex items-center justify-center text-center cursor-pointer ${slotClass}">
+                                    ${placedVal ? escapeHtml(placedVal) : 'Перетягни сюди'}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    const allFilled = !st.slots.includes(null);
+                    const submitBtn = !st.submitted ? `
+                        <button onclick="submitMatchScenario(${qIdx})" ${!allFilled ? 'disabled' : ''} class="mt-2.5 w-full py-2 rounded-xl text-xs font-semibold transition ${allFilled ? 'bg-amber-600 hover:bg-amber-500 text-white shadow' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                            Перевірити відповідність
+                        </button>
+                    ` : '';
+
+                    bodyHtml = `${chipsHtml}<div class="space-y-1.5">${rowsHtml}</div>${submitBtn}`;
+                }
+
+                card.innerHTML = `
+                    <div>
+                        ${badgeHtml}
+                        <p class="text-xs sm:text-sm font-semibold text-white mb-3 leading-snug">${escapeHtml(item.q)}</p>
+                        ${bodyHtml}
+                    </div>
+                    ${st.submitted ? `
+                        <div class="mt-3 p-2.5 rounded-xl bg-slate-950/70 border ${st.isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} text-[11px] text-slate-300">
+                            <span class="font-bold ${st.isCorrect ? 'text-emerald-400' : 'text-rose-400'} mr-1">
+                                ${st.isCorrect ? '✓ Правильно!' : '✗ Є помилка.'}
+                            </span>
+                            ${escapeHtml(item.explanation)}
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function answerScenario(qIdx, oIdx) {
+            if (quizAnswers[qIdx] !== null) return;
+            quizAnswers[qIdx] = oIdx;
+            renderScenarios();
+
+            const answeredCount = quizAnswers.filter(a => a !== null).length;
+            document.getElementById('quiz-progress-counter').textContent = `${answeredCount} / 24`;
+
+            // Calculate proportional score for level 4 (max 25 points for 24 questions)
+            let correctCount = 0;
+            quizAnswers.forEach((ans, idx) => {
+                if (ans === scenarios[idx].correct) correctCount++;
+            });
+            scores[4] = Math.round((correctCount / scenarios.length) * 25);
+
+            if (!quizAnswers.includes(null)) {
+                completed[4] = true;
+                showFinalSummary();
+            }
+            updateScoreDisplay();
+        }
+
+        function showFinalSummary() {
+            const total = scores[1] + scores[2] + scores[3] + scores[4];
+            document.getElementById('final-score-display').textContent = total;
+            
+            const verdict = document.getElementById('final-verdict');
+            if (total >= 85) {
+                verdict.textContent = 'Чудовий результат! Ти впевнено володієш семантикою HTML5 та базовим синтаксисом CSS і повністю готовий до контрольної роботи.';
+            } else if (total >= 60) {
+                verdict.textContent = 'Гарний рівень! Зверни увагу на завдання, де виникли труднощі, та повтори відповідні теги й правила вкладеності.';
+            } else {
+                verdict.textContent = 'Варто ще трохи потренуватися. Пройди кожен рівень ще раз, звертаючи увагу на підказки та пояснення.';
+            }
+
+            const banner = document.getElementById('final-summary');
+            banner.classList.remove('hidden');
+            banner.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        renderScenarios();
+    </script>
+</body>
+</html>
